@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "233317458111",
+    "project_id": "novoplextz",
+    "storage_bucket": "novoplextz.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:233317458111:android:6322a35a769215841aa60a",
+        "android_client_info": {
+          "package_name": "com.Novoplex.NovoplexTZ"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDSNRk9rWGRbeSMl5o8PsRhvKjnvKEYHbY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

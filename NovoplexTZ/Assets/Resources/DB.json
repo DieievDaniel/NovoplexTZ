@@ -1,0 +1,16 @@
+{
+  "Apps": {
+    "App1": {
+      "IsActive": false,
+      "URL": "https://github.com/"
+    },
+    "App2": {
+      "IsActive": false,
+      "URL": "https://www.google.com/"
+    },
+    "App3": {
+      "IsActive": true,
+      "URL": "https://translate.google.com/"
+    }
+  }
+}
