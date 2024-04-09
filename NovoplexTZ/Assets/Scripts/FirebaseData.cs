@@ -1,8 +1,11 @@
+using Gpm.WebView;
+using Firebase;
+using Firebase.Database;
+using Newtonsoft.Json;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
-using Newtonsoft.Json;
-using System.Collections.Generic;
-using System.Collections;
 
 public class FirebaseManager : MonoBehaviour
 {
@@ -16,7 +19,7 @@ public class FirebaseManager : MonoBehaviour
         public string URL;
     }
 
-    void Start()
+    private void Start()
     {
         isFirstRun = PlayerPrefs.GetInt("IsFirstRun", 1) == 1;
 
@@ -27,47 +30,81 @@ public class FirebaseManager : MonoBehaviour
             return;
         }
 
-        LoadActiveApp();
+        InitializeFirebase();
     }
 
-    public void LoadActiveApp()
+    private void InitializeFirebase()
     {
-        StartCoroutine(GetAppsData());
-    }
-
-    IEnumerator GetAppsData()
-    {
-        UnityWebRequest request = UnityWebRequest.Get(databaseURL);
-        yield return request.SendWebRequest();
-
-        if (request.result == UnityWebRequest.Result.ConnectionError ||
-            request.result == UnityWebRequest.Result.ProtocolError)
+        FirebaseApp.CheckAndFixDependenciesAsync().ContinueWith(task =>
         {
-            Debug.LogError(request.error);
-            yield break;
-        }
-
-        string json = request.downloadHandler.text;
-
-        Dictionary<string, AppData> appsData = JsonConvert.DeserializeObject<Dictionary<string, AppData>>(json);
-
-        AppData activeApp = null;
-        foreach (var kvp in appsData)
-        {
-            if (kvp.Value.IsActive)
+            var dependencyStatus = task.Result;
+            if (dependencyStatus == DependencyStatus.Available)
             {
-                activeApp = kvp.Value;
-                break;
+                LoadActiveApp();
             }
-        }
+            else
+            {
+                Debug.LogError("Failed to initialize Firebase: " + dependencyStatus.ToString());
+            }
+        });
+    }
 
-        if (activeApp != null)
+    private void LoadActiveApp()
+    {
+        DatabaseReference reference = FirebaseDatabase.DefaultInstance.GetReference("Apps");
+        reference.GetValueAsync().ContinueWith(task =>
         {
-            Application.OpenURL(activeApp.URL);
-        }
-        else
-        {
-            Debug.Log("Активное приложение не найдено.");
-        }
+            if (task.IsFaulted || task.IsCanceled)
+            {
+                Debug.LogError("Failed to fetch data from Firebase.");
+                return;
+            }
+
+            DataSnapshot snapshot = task.Result;
+            string json = snapshot.GetRawJsonValue();
+            Dictionary<string, AppData> appsData = JsonConvert.DeserializeObject<Dictionary<string, AppData>>(json);
+
+            AppData activeApp = null;
+            foreach (var kvp in appsData)
+            {
+                if (kvp.Value.IsActive)
+                {
+                    activeApp = kvp.Value;
+                    break;
+                }
+            }
+
+            if (activeApp != null)
+            {
+                ShowUrlFullScreen(activeApp.URL);
+            }
+            else
+            {
+                Debug.Log("Active app not found.");
+            }
+        });
+    }
+
+    private void ShowUrlFullScreen(string url)
+    {
+        GpmWebView.ShowUrl(
+            url,
+            new GpmWebViewRequest.Configuration()
+            {
+                style = GpmWebViewStyle.FULLSCREEN,
+                orientation = GpmOrientation.UNSPECIFIED,
+                isClearCookie = true,
+                isClearCache = true,
+                backgroundColor = "#FFFFFF",
+                isNavigationBarVisible = true,
+                navigationBarColor = "#4B96E6",
+                title = "The page title.",
+                isBackButtonVisible = true,
+                isForwardButtonVisible = true,
+                isCloseButtonVisible = true,
+                supportMultipleWindows = true,
+                contentMode = GpmWebViewContentMode.MOBILE
+            },
+            null, null);
     }
 }
